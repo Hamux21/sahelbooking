@@ -16,6 +16,13 @@
       </ul>
     </aside>
     <main class="main-content">
+      <!-- Loading Overlay -->
+      <div v-if="loading" class="loading-overlay">
+        <div class="spinner"></div>
+        <p>Chargement...</p>
+      </div>
+
+      <!-- Dashboard -->
       <div v-if="currentView==='dashboard'">
         <h2>Tableau de bord Super Administrateur</h2>
         <div class="stats-grid">
@@ -38,9 +45,13 @@
         </div>
         <p style="margin-top:24px;">Bienvenue sur le dashboard !</p>
       </div>
+
+      <!-- Search -->
       <div v-if="currentView==='search'">
         <FlightSearch />
       </div>
+
+      <!-- Users Management -->
       <div v-if="currentView==='users'">
         <button @click="showAddUserModal = true" class="add-user-btn">Ajouter un utilisateur</button>
         <div v-if="showAddUserModal" class="modal-overlay" @click.self="showAddUserModal = false">
@@ -55,7 +66,7 @@
               <option value="admin">Admin</option>
               <option value="superadmin">SuperAdmin</option>
             </select>
-            <button @click="addUser">Ajouter</button>
+            <button @click="addUser" :disabled="addingUser">Ajouter</button>
             <button @click="showAddUserModal = false">Annuler</button>
           </div>
         </div>
@@ -70,7 +81,7 @@
               <option value="superadmin">SuperAdmin</option>
             </select>
           </div>
-          <table class="user-table">
+          <table v-if="filteredUsers.length" class="user-table">
             <thead>
               <tr>
                 <th>Email</th>
@@ -100,17 +111,21 @@
                 <td>
                   <button @click="updateUser(user)">Enregistrer</button>
                   <button @click="toggleActive(user)">{{ user.active ? 'Désactiver' : 'Activer' }}</button>
+                  <button @click="confirmDeleteUser(user)" class="delete-btn">Supprimer</button>
                 </td>
               </tr>
             </tbody>
           </table>
-          <div class="pagination">
-            <button :disabled="userPage === 1" @click="userPage--">&lt;</button>
+          <p v-else>Aucun utilisateur trouvé.</p>
+          <div v-if="filteredUsers.length" class="pagination">
+            <button :disabled="userPage === 1" @click="userPage--"><</button>
             <span>Page {{ userPage }} / {{ userPageCount }}</span>
-            <button :disabled="userPage === userPageCount" @click="userPage++">&gt;</button>
+            <button :disabled="userPage === userPageCount" @click="userPage++">></button>
           </div>
         </section>
       </div>
+
+      <!-- Reservations Management -->
       <div v-if="currentView==='reservations'">
         <section>
           <h3>Gestion des réservations</h3>
@@ -123,7 +138,7 @@
               <option value="cancelled">Annulée</option>
             </select>
           </div>
-          <table class="reservation-table">
+          <table v-if="filteredReservations.length" class="reservation-table">
             <thead>
               <tr>
                 <th>Numéro</th>
@@ -131,6 +146,7 @@
                 <th>Montant</th>
                 <th>Statut</th>
                 <th>Date</th>
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -140,16 +156,38 @@
                 <td>{{ r.total_price }} {{ r.currency }}</td>
                 <td>{{ r.status }}</td>
                 <td>{{ formatDate(r.created_at) }}</td>
+                <td>
+                  <button @click="showReservationModal(r)">Détails</button>
+                  <button v-if="r.status === 'pending'" @click="updateReservationStatus(r, 'confirmed')">Confirmer</button>
+                  <button v-if="r.status !== 'cancelled'" @click="updateReservationStatus(r, 'cancelled')">Annuler</button>
+                  <button @click="confirmDeleteReservation(r)" class="delete-btn">Supprimer</button>
+                </td>
               </tr>
             </tbody>
           </table>
-          <div class="pagination">
-            <button :disabled="reservationPage === 1" @click="reservationPage--">&lt;</button>
+          <p v-else>Aucune réservation trouvée.</p>
+          <div v-if="filteredReservations.length" class="pagination">
+            <button :disabled="reservationPage === 1" @click="reservationPage--"><</button>
             <span>Page {{ reservationPage }} / {{ reservationPageCount }}</span>
-            <button :disabled="reservationPage === reservationPageCount" @click="reservationPage++">&gt;</button>
+            <button :disabled="reservationPage === reservationPageCount" @click="reservationPage++">></button>
           </div>
         </section>
       </div>
+
+      <!-- Reservation Details Modal -->
+      <div v-if="showReservationModal" class="modal-overlay" @click.self="closeReservationModal">
+        <div class="modal-content large">
+          <h4>Détails de la réservation {{ selectedReservation?.reservation_number }}</h4>
+          <p><strong>Utilisateur:</strong> {{ selectedReservation?.user_email }}</p>
+          <p><strong>Montant:</strong> {{ selectedReservation?.total_price }} {{ selectedReservation?.currency }}</p>
+          <p><strong>Statut:</strong> {{ selectedReservation?.status }}</p>
+          <p><strong>Date:</strong> {{ formatDate(selectedReservation?.created_at) }}</p>
+          <!-- Add more details if needed -->
+          <button @click="closeReservationModal">Fermer</button>
+        </div>
+      </div>
+
+      <!-- Supervision -->
       <div v-if="currentView==='supervision'">
         <section>
           <h3>Supervision globale</h3>
@@ -159,20 +197,37 @@
             <li>Total superadmins : {{ stats.superadmins }}</li>
             <li>Total réservations : {{ stats.reservations }}</li>
           </ul>
-          <p style="margin-top:16px;">(Graphiques et exports à venir)</p>
+          <button @click="exportUsers">Exporter utilisateurs (CSV)</button>
+          <button @click="exportReservations">Exporter réservations (CSV)</button>
+          <p style="margin-top:16px;">(Graphiques à venir)</p>
         </section>
       </div>
+
+      <!-- Delete Confirmation Modal -->
+      <div v-if="deleteTarget" class="modal-overlay" @click.self="cancelDelete">
+        <div class="modal-content">
+          <h4>Confirmer la suppression</h4>
+          <p>Êtes-vous sûr de vouloir supprimer {{ deleteTarget.type === 'user' ? 'l\'utilisateur' : 'la réservation' }} ? Cette action est irréversible.</p>
+          <button @click="proceedDelete" class="delete-btn">Supprimer</button>
+          <button @click="cancelDelete">Annuler</button>
+        </div>
+      </div>
     </main>
+
+    <!-- Toast Notifications -->
+    <NotificationToast v-if="toast.message" :message="toast.message" :type="toast.type" @close="toast = {}" />
   </div>
 </template>
 
 <script>
 import { supabase, TABLES } from '@/config/supabase'
 import FlightSearch from './FlightSearch.vue'
+import NotificationToast from './NotificationToast.vue'
 import { handleLogout } from '@/router/index'
+
 export default {
   name: 'SuperAdminDashboard',
-  components: { FlightSearch },
+  components: { FlightSearch, NotificationToast },
   props: {
     user: {
       type: Object,
@@ -202,10 +257,16 @@ export default {
       userRoleFilter: '',
       reservationSearch: '',
       reservationStatusFilter: '',
-  userPage: 1,
-  userPageSize: 5,
-  reservationPage: 1,
-  reservationPageSize: 5
+      userPage: 1,
+      userPageSize: 5,
+      reservationPage: 1,
+      reservationPageSize: 5,
+      loading: false,
+      addingUser: false,
+      showReservationModal: false,
+      selectedReservation: null,
+      deleteTarget: null,
+      toast: {}
     }
   },
   computed: {
@@ -252,25 +313,35 @@ export default {
     logout() {
       handleLogout(this.user?.role)
     },
+    showToast(message, type = 'info') {
+      this.toast = { message, type }
+      setTimeout(() => this.toast = {}, 5000)
+    },
     async fetchUsers() {
-      const { data, error } = await supabase.from(TABLES.USERS).select('*')
-      if (!error) {
+      try {
+        const { data, error } = await supabase.from(TABLES.USERS).select('*')
+        if (error) throw error
         this.users = data
         this.stats.users = data.filter(u => u.role === 'user').length
         this.stats.admins = data.filter(u => u.role === 'admin').length
         this.stats.superadmins = data.filter(u => u.role === 'superadmin').length
+      } catch (error) {
+        this.showToast('Erreur lors du chargement des utilisateurs: ' + error.message, 'error')
       }
     },
     async fetchReservations() {
-      const { data, error } = await supabase.from(TABLES.RESERVATIONS).select('*')
-      if (!error) {
+      try {
+        const { data, error } = await supabase.from(TABLES.RESERVATIONS).select('*')
+        if (error) throw error
         this.reservations = data
         this.stats.reservations = data.length
-        // Optionnel : peupler user_email si besoin
+        // Populate user_email
         for (const r of this.reservations) {
           const user = this.users.find(u => u.id === r.user_id)
           r.user_email = user ? user.email : ''
         }
+      } catch (error) {
+        this.showToast('Erreur lors du chargement des réservations: ' + error.message, 'error')
       }
     },
     formatDate(date) {
@@ -278,28 +349,116 @@ export default {
       return new Date(date).toLocaleString('fr-FR', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })
     },
     async updateUser(user) {
-      await supabase.from(TABLES.USERS).update({
-        first_name: user.first_name,
-        last_name: user.last_name,
-        role: user.role
-      }).eq('id', user.id)
-      await this.fetchUsers()
+      try {
+        await supabase.from(TABLES.USERS).update({
+          first_name: user.first_name,
+          last_name: user.last_name,
+          role: user.role
+        }).eq('id', user.id)
+        this.showToast('Utilisateur mis à jour avec succès', 'success')
+        await this.fetchUsers()
+      } catch (error) {
+        this.showToast('Erreur lors de la mise à jour: ' + error.message, 'error')
+      }
     },
     async toggleActive(user) {
-      await supabase.from(TABLES.USERS).update({ active: !user.active }).eq('id', user.id)
-      await this.fetchUsers()
+      try {
+        await supabase.from(TABLES.USERS).update({ active: !user.active }).eq('id', user.id)
+        this.showToast('Statut utilisateur changé', 'success')
+        await this.fetchUsers()
+      } catch (error) {
+        this.showToast('Erreur lors du changement de statut: ' + error.message, 'error')
+      }
     },
     async addUser() {
-      if (!this.newUser.id || !this.newUser.email) return
-      await supabase.from(TABLES.USERS).insert([{ ...this.newUser, active: true }])
-      this.newUser = { id: '', email: '', first_name: '', last_name: '', role: 'user' }
-      this.showAddUserModal = false
-      await this.fetchUsers()
+      if (!this.newUser.email) {
+        this.showToast('Veuillez saisir l\'email', 'error')
+        return
+      }
+      this.addingUser = true
+      try {
+        await supabase.from(TABLES.USERS).insert([{ ...this.newUser, active: true }])
+        this.newUser = { id: '', email: '', first_name: '', last_name: '', role: 'user' }
+        this.showAddUserModal = false
+        this.showToast('Utilisateur ajouté avec succès', 'success')
+        await this.fetchUsers()
+      } catch (error) {
+        this.showToast('Erreur lors de l\'ajout: ' + error.message, 'error')
+      } finally {
+        this.addingUser = false
+      }
+    },
+    confirmDeleteUser(user) {
+      this.deleteTarget = { type: 'user', item: user }
+    },
+    confirmDeleteReservation(reservation) {
+      this.deleteTarget = { type: 'reservation', item: reservation }
+    },
+    async proceedDelete() {
+      try {
+        if (this.deleteTarget.type === 'user') {
+          await supabase.from(TABLES.USERS).delete().eq('id', this.deleteTarget.item.id)
+          this.showToast('Utilisateur supprimé', 'success')
+          await this.fetchUsers()
+        } else {
+          await supabase.from(TABLES.RESERVATIONS).delete().eq('id', this.deleteTarget.item.id)
+          this.showToast('Réservation supprimée', 'success')
+          await this.fetchReservations()
+        }
+      } catch (error) {
+        this.showToast('Erreur lors de la suppression: ' + error.message, 'error')
+      } finally {
+        this.deleteTarget = null
+      }
+    },
+    cancelDelete() {
+      this.deleteTarget = null
+    },
+    showReservationModal(reservation) {
+      this.selectedReservation = reservation
+      this.showReservationModal = true
+    },
+    closeReservationModal() {
+      this.showReservationModal = false
+      this.selectedReservation = null
+    },
+    async updateReservationStatus(reservation, status) {
+      try {
+        await supabase.from(TABLES.RESERVATIONS).update({ status }).eq('id', reservation.id)
+        this.showToast('Statut mis à jour', 'success')
+        await this.fetchReservations()
+      } catch (error) {
+        this.showToast('Erreur lors de la mise à jour: ' + error.message, 'error')
+      }
+    },
+    exportUsers() {
+      const csv = 'Email,Prénom,Nom,Rôle,Actif\n' + this.users.map(u => `${u.email},${u.first_name},${u.last_name},${u.role},${u.active}`).join('\n')
+      this.downloadCSV(csv, 'utilisateurs.csv')
+    },
+    exportReservations() {
+      const csv = 'Numéro,Utilisateur,Montant,Statut,Date\n' + this.reservations.map(r => `${r.reservation_number},${r.user_email},${r.total_price} ${r.currency},${r.status},${this.formatDate(r.created_at)}`).join('\n')
+      this.downloadCSV(csv, 'reservations.csv')
+    },
+    downloadCSV(csv, filename) {
+      const blob = new Blob([csv], { type: 'text/csv' })
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = filename
+      a.click()
+      window.URL.revokeObjectURL(url)
     }
   },
-  mounted() {
-    this.fetchUsers()
-    this.fetchReservations()
+  async mounted() {
+    this.loading = true
+    try {
+      await this.fetchUsers()
+      await this.fetchReservations()
+    } catch (error) {
+      this.showToast('Erreur lors du chargement initial: ' + error.message, 'error')
+    } finally {
+      this.loading = false
+    }
   }
 }
 </script>
@@ -353,7 +512,7 @@ export default {
   color: #1a237e;
   margin-top: 8px;
 }
-.reservation-table {
+.user-table, .reservation-table {
   width: 100%;
   border-collapse: collapse;
   background: #fff;
@@ -361,15 +520,15 @@ export default {
   box-shadow: 0 2px 8px rgba(0,0,0,0.08);
   margin-top: 16px;
 }
-.reservation-table th, .reservation-table td {
+.user-table th, .user-table td, .reservation-table th, .reservation-table td {
   padding: 12px 16px;
   border-bottom: 1px solid #eee;
 }
-.reservation-table th {
+.user-table th, .reservation-table th {
   background: #f7f7f7;
   font-weight: 600;
 }
-.reservation-table tr:last-child td {
+.user-table tr:last-child td, .reservation-table tr:last-child td {
   border-bottom: none;
 }
 .superadmin-layout {
@@ -433,11 +592,98 @@ export default {
   padding: 40px 32px;
   background: #f7f7f7;
   min-height: 100vh;
+  position: relative;
 }
 .add-user-btn {
   margin-bottom: 16px;
+  background: #4caf50;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.add-user-btn:hover {
+  background: #45a049;
 }
 section {
   margin-bottom: 32px;
+}
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+.modal-content {
+  background: white;
+  padding: 24px;
+  border-radius: 8px;
+  max-width: 500px;
+  width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+.modal-content.large {
+  max-width: 700px;
+}
+.modal-content h4 {
+  margin-top: 0;
+}
+.modal-content input, .modal-content select {
+  width: 100%;
+  padding: 8px;
+  margin: 8px 0;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+.modal-content button {
+  margin: 8px 8px 0 0;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.modal-content button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.delete-btn {
+  background: #f44336;
+  color: white;
+}
+.delete-btn:hover {
+  background: #d32f2f;
+}
+.loading-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(255,255,255,0.8);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+}
+.spinner {
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #1a237e;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  animation: spin 1s linear infinite;
+}
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 </style>
