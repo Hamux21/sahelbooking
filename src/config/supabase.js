@@ -159,6 +159,29 @@ export const authService = {
       })
 
       if (error) throw error
+      
+      // Vérifier si l'utilisateur est actif
+      if (data.user) {
+        const { data: userData, error: userError } = await supabase
+          .from(TABLES.USERS)
+          .select('active, role')
+          .eq('id', data.user.id)
+          .single()
+        
+        if (userError) {
+          console.error('Erreur lors de la vérification du status utilisateur:', userError)
+          throw userError
+        }
+        
+        // Si l'utilisateur est désactivé, déconnecter et refuser l'accès
+        if (userData && userData.active === false) {
+          await supabase.auth.signOut()
+          throw new Error('Votre compte a été désactivé. Contactez l\'administrateur.')
+        }
+        
+        console.log(`✅ Connexion réussie pour ${email}, statut actif: ${userData?.active}`)
+      }
+      
       return data
     } catch (error) {
       console.error('Erreur lors de la connexion:', error)
