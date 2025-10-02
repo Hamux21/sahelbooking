@@ -15,6 +15,10 @@ async function getAccessToken() {
     return cachedAccessToken
   }
 
+  console.log('CLIENT_ID set:', !!CLIENT_ID)
+  console.log('CLIENT_SECRET set:', !!CLIENT_SECRET)
+  console.log('AMADEUS_HOST:', AMADEUS_HOST)
+
   const body = new URLSearchParams({
     grant_type: 'client_credentials',
     client_id: CLIENT_ID,
