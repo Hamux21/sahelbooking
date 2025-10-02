@@ -1,120 +1,92 @@
 <template>
-  <div class="admin-dashboard">
-    <header class="dashboard-header">
-      <div class="header-content">
-        <h1>SahelBooking - Admin</h1>
-        <div class="user-info">
-          <span>Bonjour, {{ user?.email }}</span>
-          <span>Rôle: {{ user?.role }}</span>
-          <button @click="logout" class="logout-btn">Déconnexion</button>
+  <div class="superadmin-layout">
+    <aside class="sidebar-modern">
+      <div class="sidebar-header">
+        <div class="sidebar-logo">
+          <i class="bi bi-person-badge"></i>
         </div>
+        <div class="sidebar-title">Administrateur</div>
       </div>
-    </header>
-
-    <div class="admin-layout">
-      <aside class="sidebar">
-        <nav class="nav-menu">
-          <ul>
-            <li :class="{active: currentView==='dashboard'}" @click="currentView='dashboard'">
-              Dashboard
-            </li>
-            <li :class="{active: currentView==='users'}" @click="currentView='users'">
-              Gestion des utilisateurs
-            </li>
-            <li :class="{active: currentView==='flights'}" @click="currentView='flights'">
-              Consultation des vols
-            </li>
-            <li :class="{active: currentView==='reservations'}" @click="currentView='reservations'">
-              Gestion des réservations
-            </li>
-          </ul>
-        </nav>
-      </aside>
-
-      <main class="main-content">
-        <div v-if="currentView==='dashboard'" class="dashboard-view">
-          <!-- En-tête compact -->
-          <div class="dashboard-header">
-            <h2>Dashboard Admin</h2>
-            <span class="user-role">{{ user?.role }}</span>
-          </div>
-
-          <!-- Statistiques compactes -->
-          <div class="stats-compact">
-            <div class="stat-item">
-              <span class="stat-icon">👥</span>
-              <div class="stat-info">
-                <div class="stat-number">{{ users.length }}</div>
-                <div class="stat-label">Utilisateurs</div>
-              </div>
-            </div>
-            
-            <div class="stat-item">
-              <span class="stat-icon">🎫</span>
-              <div class="stat-info">
-                <div class="stat-number">{{ reservations.length }}</div>
-                <div class="stat-label">Réservations</div>
-              </div>
-            </div>
-            
-            <div class="stat-item">
-              <span class="stat-icon">✈️</span>
-              <div class="stat-info">
-                <div class="stat-number">{{ flights.length }}</div>
-                <div class="stat-label">Vols</div>
-              </div>
-            </div>
-            
-            <div class="stat-item">
-              <span class="stat-icon">💰</span>
-              <div class="stat-info">
-                <div class="stat-number">{{ totalRevenue }}€</div>
-                <div class="stat-label">Revenus</div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Actions rapides compactes -->
-          <div class="quick-actions-compact">
-            <button @click="currentView = 'users'" class="action-btn-compact">
-              👥 Utilisateurs
-            </button>
-            <button @click="currentView = 'reservations'" class="action-btn-compact">
-              🎫 Réservations
-            </button>
-            <button @click="currentView = 'flights'" class="action-btn-compact">
-              ✈️ Vols
-            </button>
-            <button @click="refreshAllData" class="action-btn-compact secondary">
-              🔄 Actualiser
-            </button>
-          </div>
-
-          <!-- Activité récente compacte -->
-          <div class="recent-activity-compact">
-            <h3>Activité récente</h3>
-            <div class="activity-compact">
-              <div v-if="recentReservations.length > 0" class="activity-column">
-                <h4>Réservations</h4>
-                <div v-for="reservation in recentReservations.slice(0, 2)" :key="reservation.id" class="activity-item-compact">
-                  <span class="activity-status-compact" :class="reservation.status">{{ reservation.status }}</span>
-                  <span class="activity-text">{{ reservation.reservation_number }} - {{ reservation.total_price }}€</span>
+      <div class="sidebar-user-info" style="padding: 0 24px 24px 24px; border-bottom: 1px solid #2e5fd0;">
+        <div class="sidebar-user-email">{{ user?.email }}</div>
+        <div class="sidebar-user-role">{{ user?.role }}</div>
+      </div>
+      <nav class="sidebar-nav">
+        <ul>
+          <li :class="{active: currentView==='dashboard'}" @click="currentView='dashboard'">
+            <i class="bi bi-grid-1x2-fill"></i>
+            <span>Tableau de bord</span>
+          </li>
+          <li :class="{active: currentView==='users'}" @click="currentView='users'">
+            <i class="bi bi-person-badge"></i>
+            <span>Gestion des utilisateurs</span>
+          </li>
+          <li :class="{active: currentView==='flights'}" @click="currentView='flights'">
+            <i class="bi bi-airplane"></i>
+            <span>Consultation des vols</span>
+          </li>
+          <li :class="{active: currentView==='reservations'}" @click="currentView='reservations'">
+            <i class="bi bi-calendar-check"></i>
+            <span>Réservations</span>
+          </li>
+        </ul>
+      </nav>
+      <div class="sidebar-bottom">
+        <button @click="logout" class="sidebar-logout">
+          <i class="bi bi-box-arrow-right"></i> Déconnexion
+        </button>
+      </div>
+    </aside>
+    <main class="main-content">
+        <div class="content-wrapper">
+          <div v-if="currentView==='dashboard'" class="dashboard-view">
+            <h2>Bienvenue sur le tableau de bord administrateur</h2>
+            <div class="stats-compact">
+              <div class="stat-item">
+                <div class="stat-icon"><i class="bi bi-people"></i></div>
+                <div class="stat-info">
+                  <div class="stat-number">{{ users.length }}</div>
+                  <div class="stat-label">Utilisateurs</div>
                 </div>
               </div>
-              
-              <div v-if="recentUsers.length > 0" class="activity-column">
-                <h4>Nouveaux utilisateurs</h4>
-                <div v-for="newUser in recentUsers.slice(0, 2)" :key="newUser.id" class="activity-item-compact">
-                  <span class="activity-status-compact" :class="newUser.active ? 'active' : 'inactive'">
-                    {{ newUser.active ? 'Actif' : 'Inactif' }}
-                  </span>
-                  <span class="activity-text">{{ newUser.first_name }} {{ newUser.last_name }}</span>
+              <div class="stat-item">
+                <div class="stat-icon"><i class="bi bi-airplane"></i></div>
+                <div class="stat-info">
+                  <div class="stat-number">{{ flights.length }}</div>
+                  <div class="stat-label">Vols</div>
+                </div>
+              </div>
+              <div class="stat-item">
+                <div class="stat-icon"><i class="bi bi-bookmark-check"></i></div>
+                <div class="stat-info">
+                  <div class="stat-number">{{ reservations.length }}</div>
+                  <div class="stat-label">Réservations</div>
+                </div>
+              </div>
+            </div>
+            <div class="recent-activity-compact">
+              <h3>Activité récente</h3>
+              <div class="activity-compact">
+                <div class="activity-column">
+                  <h4>Derniers utilisateurs</h4>
+                  <div v-for="user in recentUsers" :key="user.id" class="activity-item-compact">
+                    <span class="activity-status-compact" :class="user.active ? 'active' : 'inactive'">
+                      {{ user.active ? 'Actif' : 'Inactif' }}
+                    </span>
+                    <span class="activity-text">{{ user.email }}</span>
+                  </div>
+                </div>
+                <div class="activity-column">
+                  <h4>Dernières réservations</h4>
+                  <div v-for="res in recentReservations" :key="res.id" class="activity-item-compact">
+                    <span class="activity-status-compact" :class="res.status">{{ res.status }}</span>
+                    <span class="activity-text">{{ res.reservation_number }} - {{ res.user_email }}</span>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
-
         <div v-if="currentView==='users'">
           <div class="section-header">
             <h3>Gestion des utilisateurs</h3>
@@ -124,8 +96,7 @@
               <span class="stat-badge inactive">{{ inactiveUsersCount }} inactif(s)</span>
             </div>
           </div>
-          
-          <div class="filters-section">
+          <div clas="filters-section">
             <div class="filters-row">
               <input v-model="userSearch" placeholder="Rechercher par email, prénom ou nom..." class="filter-input" />
               <select v-model="userStatusFilter" class="filter-input">
@@ -139,11 +110,9 @@
           <div v-if="loadingUsers" class="loading">
             Chargement des utilisateurs...
           </div>
-          
           <div v-else-if="filteredUsers.length === 0" class="no-data">
             Aucun utilisateur trouvé
           </div>
-          
           <div v-else class="users-table-container">
             <table class="users-table-modern">
               <thead>
@@ -209,7 +178,7 @@
                         :class="{ 'has-changes': isUserModified(user), 'disabled': user.role === 'superadmin' }"
                         :title="user.role === 'superadmin' ? 'Impossible de modifier un super admin' : (isUserModified(user) ? 'Enregistrer les modifications' : 'Aucune modification')"
                       >
-                        💾
+                        <i class="bi bi-floppy"></i>
                       </button>
                       <button 
                         @click="resetUserChanges(user)" 
@@ -217,7 +186,7 @@
                         v-if="isUserModified(user) && user.role !== 'superadmin'"
                         title="Annuler les modifications"
                       >
-                        ↶
+                        <i class="bi bi-arrow-counterclockwise"></i>
                       </button>
                       <button 
                         @click="toggleActive(user)" 
@@ -226,7 +195,9 @@
                         :disabled="user.role === 'superadmin'"
                         :title="user.role === 'superadmin' ? 'Impossible de modifier un super admin' : (user.active ? 'Désactiver' : 'Activer')"
                       >
-                        {{ user.role === 'superadmin' ? '👑' : (user.active ? '🔒' : '✅') }}
+                        <i v-if="user.role === 'superadmin'" class="bi bi-shield-lock"></i>
+                        <i v-else-if="user.active" class="bi bi-lock"></i>
+                        <i v-else class="bi bi-unlock"></i>
                       </button>
                     </div>
                   </td>
@@ -234,41 +205,34 @@
               </tbody>
             </table>
           </div>
-          
           <div v-if="filteredUsers.length > userPageSize" class="pagination">
-            <button :disabled="userPage === 1" @click="userPage--" class="pagination-btn">&lt;</button>
-            <span class="pagination-info">Page {{ userPage }} / {{ userPageCount }}</span>
-            <button :disabled="userPage === userPageCount" @click="userPage++" class="pagination-btn">&gt;</button>
+            <!-- ...pagination utilisateurs... -->
           </div>
         </div>
 
         <div v-if="currentView==='flights'">
-          <h3>Consultation des vols</h3>
-          <div class="filters-row">
-            <input v-model="flightSearch" placeholder="Rechercher par origine, destination..." class="filter-input" />
-            <select v-model="tripTypeFilter" class="filter-input">
-              <option value="">Tous les types</option>
-              <option value="oneWay">Aller simple</option>
-              <option value="roundTrip">Aller-retour</option>
-            </select>
-            <select v-model="travelClassFilter" class="filter-input">
-              <option value="">Toutes les classes</option>
-              <option value="ECONOMY">Économique</option>
-              <option value="PREMIUM_ECONOMY">Économique Premium</option>
-              <option value="BUSINESS">Affaires</option>
-              <option value="FIRST">Première</option>
-            </select>
+          <div class="section-header">
+            <h3>Consultation des vols</h3>
           </div>
-          
-          <div v-if="loadingFlights" class="loading">
-            Chargement des vols...
+          <div class="filters-section">
+            <div class="filters-row">
+              <input v-model="flightSearch" placeholder="Rechercher par code aéroport..." class="filter-input" />
+              <select v-model="tripTypeFilter" class="filter-input">
+                <option value="">Tous types</option>
+                <option value="oneWay">Aller simple</option>
+                <option value="roundTrip">Aller-retour</option>
+              </select>
+              <select v-model="travelClassFilter" class="filter-input">
+                <option value="">Toutes classes</option>
+                <option value="ECONOMY">Économique</option>
+                <option value="BUSINESS">Affaires</option>
+                <option value="FIRST">Première</option>
+              </select>
+            </div>
           </div>
-          
-          <div v-else-if="flights.length === 0" class="no-data">
-            Aucun vol trouvé
-          </div>
-          
-          <div v-else>
+          <div v-if="loadingFlights" class="loading">Chargement des vols...</div>
+          <div v-else-if="filteredFlights.length === 0" class="no-data">Aucun vol trouvé</div>
+          <div v-else class="flights-table-container">
             <table class="flights-table">
               <thead>
                 <tr>
@@ -276,11 +240,8 @@
                   <th>Destination</th>
                   <th>Date départ</th>
                   <th>Date retour</th>
-                  <th>Passagers</th>
                   <th>Classe</th>
                   <th>Type</th>
-                  <th>Résultats</th>
-                  <th>Date création</th>
                   <th>Actions</th>
                 </tr>
               </thead>
@@ -288,85 +249,47 @@
                 <tr v-for="flight in paginatedFlights" :key="flight.id">
                   <td>{{ flight.origin_code }}</td>
                   <td>{{ flight.destination_code }}</td>
-                  <td>{{ formatDate(flight.departure_date) }}</td>
-                  <td>{{ flight.return_date ? formatDate(flight.return_date) : 'N/A' }}</td>
-                  <td>{{ flight.adults }}A{{ flight.children > 0 ? `, ${flight.children}E` : '' }}</td>
+                  <td>{{ formatDateShort(flight.departure_date) }}</td>
+                  <td>{{ formatDateShort(flight.return_date) }}</td>
                   <td>{{ formatTravelClass(flight.travel_class) }}</td>
                   <td>{{ formatTripType(flight.trip_type) }}</td>
                   <td>
-                    <span v-if="flight.search_results">
-                      {{ Array.isArray(flight.search_results) ? flight.search_results.length : 'Oui' }} résultat(s)
-                    </span>
-                    <span v-else>Aucun</span>
-                  </td>
-                  <td>{{ formatDate(flight.created_at) }}</td>
-                  <td>
-                    <button @click="viewFlightDetails(flight)" class="btn-small">Voir détails</button>
+                    <button class="btn-small" @click="viewFlightDetails(flight)">Voir</button>
                   </td>
                 </tr>
               </tbody>
             </table>
-            
             <div class="pagination">
               <button :disabled="flightPage === 1" @click="flightPage--">&lt;</button>
               <span>Page {{ flightPage }} / {{ flightPageCount }}</span>
               <button :disabled="flightPage === flightPageCount" @click="flightPage++">&gt;</button>
             </div>
           </div>
-          
-          <!-- Modal pour voir les détails du vol -->
-          <div v-if="showFlightModal" class="modal-overlay" @click.self="showFlightModal = false">
-            <div class="modal-content">
-              <h4>Détails du vol</h4>
-              <div v-if="selectedFlight">
-                <p><strong>ID :</strong> {{ selectedFlight.id }}</p>
-                <p><strong>Origine :</strong> {{ selectedFlight.origin_code }}</p>
-                <p><strong>Destination :</strong> {{ selectedFlight.destination_code }}</p>
-                <p><strong>Date de départ :</strong> {{ formatDate(selectedFlight.departure_date) }}</p>
-                <p><strong>Date de retour :</strong> {{ selectedFlight.return_date ? formatDate(selectedFlight.return_date) : 'N/A' }}</p>
-                <p><strong>Passagers :</strong> {{ selectedFlight.adults }} adulte(s), {{ selectedFlight.children }} enfant(s)</p>
-                <p><strong>Classe :</strong> {{ formatTravelClass(selectedFlight.travel_class) }}</p>
-                <p><strong>Type de voyage :</strong> {{ formatTripType(selectedFlight.trip_type) }}</p>
-                <p><strong>Créé le :</strong> {{ formatDate(selectedFlight.created_at) }}</p>
-                
-                <div v-if="selectedFlight.search_results" class="search-results">
-                  <h5>Résultats de recherche :</h5>
-                  <pre>{{ JSON.stringify(selectedFlight.search_results, null, 2) }}</pre>
-                </div>
-                
-                <button @click="showFlightModal = false" class="btn-primary">Fermer</button>
-              </div>
-            </div>
-          </div>
         </div>
 
         <div v-if="currentView==='reservations'">
-          <h3>Gestion des réservations</h3>
-          <div class="filters-row">
-            <input v-model="reservationSearch" placeholder="Rechercher par numéro, email, statut..." class="filter-input" />
-            <select v-model="reservationStatusFilter" class="filter-input">
-              <option value="">Tous statuts</option>
-              <option value="pending">En attente</option>
-              <option value="confirmed">Confirmée</option>
-              <option value="cancelled">Annulée</option>
-            </select>
+          <div class="section-header">
+            <h3>Gestion des réservations</h3>
           </div>
-          
-          <div v-if="loadingReservations" class="loading">
-            Chargement des réservations...
+          <div class="filters-section">
+            <div class="filters-row">
+              <input v-model="reservationSearch" placeholder="Rechercher par numéro, email, statut..." class="filter-input" />
+              <select v-model="reservationStatusFilter" class="filter-input">
+                <option value="">Tous statuts</option>
+                <option value="pending">En attente</option>
+                <option value="confirmed">Confirmée</option>
+                <option value="cancelled">Annulée</option>
+              </select>
+            </div>
           </div>
-          
-          <div v-else-if="filteredReservations.length === 0" class="no-data">
-            Aucune réservation trouvée
-          </div>
-          
-          <div v-else>
+          <div v-if="loadingReservations" class="loading">Chargement des réservations...</div>
+          <div v-else-if="filteredReservations.length === 0" class="no-data">Aucune réservation trouvée</div>
+          <div v-else class="reservation-table-container">
             <table class="reservation-table">
               <thead>
                 <tr>
                   <th>Numéro</th>
                   <th>Utilisateur</th>
-                  <th>Vol</th>
                   <th>Montant</th>
                   <th>Statut</th>
                   <th>Date</th>
@@ -374,65 +297,55 @@
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="reservation in paginatedReservations" :key="reservation.id">
-                  <td>{{ reservation.reservation_number }}</td>
+                <tr v-for="r in paginatedReservations" :key="r.id">
+                  <td>{{ r.reservation_number }}</td>
+                  <td>{{ r.user_email || r.user_id }}</td>
+                  <td>{{ r.total_price }} {{ r.currency }}</td>
                   <td>
-                    <div>{{ reservation.user_first_name }} {{ reservation.user_last_name }}</div>
-                    <small>{{ reservation.user_email }}</small>
+                    <span class="status-badge" :class="r.status">{{ r.status }}</span>
                   </td>
+                  <td>{{ formatDate(r.created_at) }}</td>
                   <td>
-                    <div>{{ reservation.departure_city }} → {{ reservation.arrival_city }}</div>
-                    <small>{{ formatDate(reservation.departure_date) }}</small>
-                  </td>
-                  <td>{{ reservation.total_price }} {{ reservation.currency || 'EUR' }}</td>
-                  <td>
-                    <span class="status-badge" :class="reservation.status">
-                      {{ reservation.status }}
-                    </span>
-                  </td>
-                  <td>{{ formatDate(reservation.created_at) }}</td>
-                  <td class="actions-cell">
-                    <button @click="viewReservation(reservation)" class="btn-small">Voir</button>
-                    <button @click="printTicket(reservation)" class="btn-small">Imprimer</button>
-                    <button 
-                      v-if="reservation.status !== 'cancelled'" 
-                      @click="cancelReservation(reservation)" 
-                      class="btn-small btn-danger"
-                    >
-                      Annuler (-30%)
-                    </button>
+                    <button class="btn-small" @click="viewReservation(r)">Voir</button>
+                    <button class="btn-small btn-danger" @click="cancelReservation(r)" v-if="r.status !== 'cancelled'">Annuler</button>
                   </td>
                 </tr>
               </tbody>
             </table>
-          </div>
-          <div class="pagination">
-            <button :disabled="reservationPage === 1" @click="reservationPage--">&lt;</button>
-            <span>Page {{ reservationPage }} / {{ reservationPageCount }}</span>
-            <button :disabled="reservationPage === reservationPageCount" @click="reservationPage++">&gt;</button>
-          </div>
-          <div v-if="showReservationModal" class="modal-overlay" @click.self="showReservationModal = false">
-            <div class="modal-content">
-              <h4>Détail réservation</h4>
-              <div v-if="selectedReservation">
-                <p><strong>Numéro :</strong> {{ selectedReservation.reservation_number }}</p>
-                <p><strong>Utilisateur :</strong> {{ selectedReservation.user_email || selectedReservation.user_id }}</p>
-                <p><strong>Montant :</strong> {{ selectedReservation.total_price }} {{ selectedReservation.currency }}</p>
-                <p><strong>Statut :</strong> {{ selectedReservation.status }}</p>
-                <p><strong>Date :</strong> {{ formatDate(selectedReservation.created_at) }}</p>
-                <button @click="showReservationModal = false">Fermer</button>
-              </div>
+            <div class="pagination">
+              <button :disabled="reservationPage === 1" @click="reservationPage--">&lt;</button>
+              <span>Page {{ reservationPage }} / {{ reservationPageCount }}</span>
+              <button :disabled="reservationPage === reservationPageCount" @click="reservationPage++">&gt;</button>
             </div>
           </div>
         </div>
-      </main>
-    </div>
-  </div>
+
+
+
+        <!-- Modal de détails réservation -->
+        <div v-if="showReservationModal" class="modal-overlay" @click.self="showReservationModal = false">
+          <div class="modal-content" id="recu-reservation">
+            <h3>Détail de la réservation</h3>
+            <div v-if="selectedReservation">
+              <p><strong>Numéro :</strong> {{ selectedReservation.reservation_number }}</p>
+              <p><strong>Utilisateur :</strong> {{ selectedReservation.user_email || selectedReservation.user_id }}</p>
+              <p><strong>Nom :</strong> {{ selectedReservation.user_first_name }} {{ selectedReservation.user_last_name }}</p>
+              <p><strong>Montant :</strong> {{ selectedReservation.total_price }} {{ selectedReservation.currency }}</p>
+              <p><strong>Statut :</strong> <span class="status-badge" :class="selectedReservation.status">{{ selectedReservation.status }}</span></p>
+              <p><strong>Date :</strong> {{ formatDate(selectedReservation.created_at) }}</p>
+              <hr />
+              <button class="btn-primary" @click="printTicket(selectedReservation)">Imprimer le reçu</button>
+              <button class="btn-secondary" @click="showReservationModal = false">Fermer</button>
+            </div>
+          </div>
+        </div>
+</main>
+</div>
+
 </template>
 
 <script>
 import { supabase, TABLES, authService, getUserRoleById } from '@/config/supabase'
-import { handleLogout } from '@/router/index'
 
 export default {
   name: 'AdminDashboard',
@@ -595,8 +508,13 @@ export default {
         this.$router.push('/login')
       }
     },
-    logout() {
-      handleLogout(this.user?.role)
+    async logout() {
+      try {
+        await authService.signOut()
+        this.$router.push('/login')
+      } catch (error) {
+        console.error('Erreur lors de la déconnexion:', error)
+      }
     },
     async fetchUsers() {
       this.loadingUsers = true
@@ -985,7 +903,13 @@ export default {
       this.showReservationModal = true
     },
     printTicket(res) {
-      window.print() // Simple impression, à adapter pour un vrai ticket
+      // Impression du reçu uniquement (modal)
+      const printContents = document.getElementById('recu-reservation').innerHTML;
+      const originalContents = document.body.innerHTML;
+      document.body.innerHTML = printContents;
+      window.print();
+      document.body.innerHTML = originalContents;
+      window.location.reload(); // Pour restaurer l'état Vue
     },
     async cancelReservation(res) {
       if (!confirm('Confirmer l’annulation ? 30% de pénalité seront appliqués.')) return
@@ -1299,10 +1223,39 @@ export default {
 </script>
 
 <style scoped>
+/* Layout principal identique superadmin */
+.superadmin-layout {
+  display: flex;
+  min-height: 100vh;
+  height: 100vh;
+}
+.main-content {
+  flex: 1;
+  background: #f7f7f7;
+  padding: 32px 32px 32px 32px;
+  overflow-x: auto;
+  overflow-y: auto;
+  min-width: 0;
+  min-height: 0;
+  height: 100vh;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+}
+.content-wrapper {
+  width: 100%;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0;
+}
 .filters-row {
   display: flex;
   gap: 16px;
   margin-bottom: 16px;
+  max-width: 800px;
+  margin: 0 auto;
 }
 .filter-input {
   padding: 8px 12px;
@@ -1335,6 +1288,13 @@ export default {
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0,0,0,0.08);
   margin-top: 16px;
+  min-width: 800px;
+}
+
+.reservation-table,
+.flights-table {
+  max-width: 900px;
+  margin: 0 auto;
 }
 .user-table th, .user-table td, 
 .reservation-table th, .reservation-table td,
@@ -1512,6 +1472,8 @@ export default {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 2rem;
+  max-width: 800px;
+  margin: 0 auto;
 }
 
 .section-stats {
@@ -1544,6 +1506,8 @@ export default {
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0,0,0,0.08);
   margin-bottom: 2rem;
+  max-width: 800px;
+  margin: 0 auto;
 }
 
 /* Tableau moderne pour de nombreux utilisateurs */
@@ -1553,6 +1517,9 @@ export default {
   box-shadow: 0 2px 12px rgba(0,0,0,0.08);
   overflow: hidden;
   margin-bottom: 2rem;
+  max-width: 900px;
+  margin: 0 auto;
+  overflow-x: auto;
 }
 
 .users-table-modern {
@@ -1679,24 +1646,94 @@ export default {
   width: 120px;
 }
 
-.role-tag {
-  padding: 0.25rem 0.75rem;
-  border-radius: 12px;
-  font-size: 0.8rem;
-  font-weight: 600;
-  background: #e3f2fd;
-  color: #1565c0;
+/* Sidebar moderne admin (identique superadmin) */
+.sidebar-modern {
+  width: 260px;
+  background: #2453c7;
+  color: #fff;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 2px 0 8px rgba(0,0,0,0.06);
 }
-
-.role-tag.default {
-  background: #e9ecef;
-  color: #6c757d;
+.sidebar-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 32px 24px 16px 24px;
 }
-
-.date-cell {
-  width: 100px;
-  color: #6c757d;
+.sidebar-logo {
+  font-size: 2rem;
+  color: #fff;
+}
+.sidebar-title {
+  font-size: 1.3rem;
+  font-weight: bold;
+  letter-spacing: 1px;
+}
+.sidebar-user-info {
+  display: flex;
+  flex-direction: column;
+}
+.sidebar-user-email {
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+.sidebar-user-role {
   font-size: 0.85rem;
+  color: #cfd8ff;
+}
+.sidebar-nav {
+  flex: 1;
+  margin-top: 18px;
+}
+.sidebar-nav ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.sidebar-nav li {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 32px;
+  cursor: pointer;
+  font-size: 1.08rem;
+  border-radius: 8px;
+  margin-bottom: 4px;
+  transition: background 0.2s, color 0.2s;
+}
+.sidebar-nav li.active, .sidebar-nav li:hover {
+  background: #1a3e8a;
+  color: #fff;
+}
+.sidebar-nav i {
+  font-size: 1.2rem;
+}
+.sidebar-bottom {
+  padding: 24px;
+  border-top: 1px solid #2e5fd0;
+}
+.sidebar-logout {
+  width: 100%;
+  background: #fff;
+  color: #2453c7;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 0;
+  font-size: 1rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+.sidebar-logout:hover {
+  background: #2453c7;
+  color: #fff;
+  border: 1px solid #fff;
 }
 
 .actions-cell {
@@ -1806,6 +1843,13 @@ export default {
   font-weight: 600;
   color: #495057;
 }
+
+.content-wrapper {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
 .modal-overlay {
   position: fixed;
   top: 0; left: 0; right: 0; bottom: 0;
@@ -1827,54 +1871,10 @@ export default {
   background: #f5f5f5;
 }
 
-.dashboard-header {
-  background: #1a237e;
-  color: white;
-  padding: 1rem 0;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.header-content {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 0 2rem;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.header-content h1 {
-  margin: 0;
-  font-size: 1.5rem;
-}
-
-.user-info {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-}
-
-.user-info span {
-  font-size: 0.9rem;
-}
-
-.logout-btn {
-  background: #f44336;
-  color: white;
-  border: none;
-  padding: 0.5rem 1rem;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 0.8rem;
-}
-
-.logout-btn:hover {
-  background: #d32f2f;
-}
 
 .admin-layout {
   display: flex;
-  max-width: 1200px;
+  max-width: 1000px;
   margin: 0 auto;
   min-height: calc(100vh - 80px);
 }
@@ -1910,8 +1910,9 @@ export default {
 
 .main-content {
   flex: 1;
-  padding: 2rem;
+  padding: 1rem;
   background: white;
+  max-width: 100%;
 }
 
 .loading {
@@ -1961,36 +1962,15 @@ export default {
 
 .dashboard-view {
   padding: 0;
+  max-width: 800px;
+  margin: 0 auto;
 }
 
-/* En-tête compact */
-.dashboard-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1rem;
-  padding-bottom: 0.5rem;
-  border-bottom: 2px solid #e9ecef;
-}
-
-.dashboard-header h2 {
-  margin: 0;
-  color: #2c3e50;
-  font-size: 1.5rem;
-}
-
-.user-role {
-  background: #007bff;
-  color: white;
-  padding: 0.25rem 0.75rem;
-  border-radius: 15px;
-  font-size: 0.8rem;
-  font-weight: 600;
-  text-transform: uppercase;
-}
 
 /* Statistiques compactes */
 .stats-compact {
+  max-width: 800px;
+  margin: 0 auto;
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
   gap: 1rem;
@@ -2036,6 +2016,8 @@ export default {
 
 /* Actions rapides compactes */
 .quick-actions-compact {
+  max-width: 800px;
+  margin: 0 auto;
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
   gap: 0.75rem;
@@ -2064,6 +2046,11 @@ export default {
 }
 
 /* Activité récente compacte */
+.recent-activity-compact {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
 .recent-activity-compact h3 {
   color: #2c3e50;
   margin-bottom: 1rem;
@@ -2146,6 +2133,27 @@ export default {
 
 /* Responsive design */
 @media (max-width: 768px) {
+  .admin-layout {
+    flex-direction: column;
+    max-width: 100%;
+  }
+  
+  .sidebar-modern {
+    width: 100%;
+    order: -1;
+    min-height: auto;
+  }
+  
+  .main-content {
+    padding: 1rem;
+    order: 1;
+  }
+  
+  .content-wrapper {
+    max-width: 100%;
+    padding: 0 0.5rem;
+  }
+  
   .stats-compact {
     grid-template-columns: repeat(2, 1fr);
   }
@@ -2156,6 +2164,20 @@ export default {
   
   .activity-compact {
     grid-template-columns: 1fr;
+  }
+  
+  .filters-row,
+  .section-header,
+  .filters-section {
+    max-width: 100%;
+    margin: 0;
+  }
+  
+  .users-table-container,
+  .reservation-table,
+  .flights-table {
+    max-width: 100%;
+    overflow-x: auto;
   }
 }
 </style>

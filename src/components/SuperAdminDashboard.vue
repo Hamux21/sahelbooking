@@ -1,21 +1,43 @@
 <template>
   <div class="superadmin-layout">
-    <aside class="sidebar">
-      <h2>SuperAdmin</h2>
-      <div class="user-info">
-        <p><strong>{{ user?.email }}</strong></p>
-        <p>Rôle: {{ user?.role }}</p>
-        <button @click="logout" class="logout-btn">Déconnexion</button>
+    <aside class="sidebar-modern">
+      <div class="sidebar-header">
+        <div class="sidebar-logo">
+          <i class="bi bi-shield-lock-fill"></i>
+        </div>
+        <div class="sidebar-title">Superadministrateur</div>
       </div>
-      <ul>
-        <li :class="{active: currentView==='dashboard'}" @click="currentView='dashboard'">Dashboard</li>
-        <li :class="{active: currentView==='search'}" @click="currentView='search'">Rechercher un vol</li>
-        <li :class="{active: currentView==='users'}" @click="currentView='users'">Gestion des utilisateurs</li>
-        <li :class="{active: currentView==='reservations'}" @click="currentView='reservations'">Gestion des réservations</li>
-        <li :class="{active: currentView==='supervision'}" @click="currentView='supervision'">Supervision globale</li>
-      </ul>
+      <div class="sidebar-user-info" style="padding: 0 24px 24px 24px; border-bottom: 1px solid #2e5fd0;">
+        <div class="sidebar-user-email">{{ user?.email }}</div>
+        <div class="sidebar-user-role">{{ user?.role }}</div>
+      </div>
+      <nav class="sidebar-nav">
+        <ul>
+          <li :class="{active: currentView==='dashboard'}" @click="currentView='dashboard'">
+            <i class="bi bi-grid-1x2-fill"></i>
+            <span>Tableau de bord</span>
+          </li>
+          <li :class="{active: currentView==='users'}" @click="currentView='users'">
+            <i class="bi bi-person-badge"></i>
+            <span>Gestion des utilisateurs</span>
+          </li>
+          <li :class="{active: currentView==='reservations'}" @click="currentView='reservations'">
+            <i class="bi bi-calendar-check"></i>
+            <span>Réservations</span>
+          </li>
+          <li :class="{active: currentView==='supervision'}" @click="currentView='supervision'">
+            <i class="bi bi-bar-chart-line"></i>
+            <span>Supervision globale</span>
+          </li>
+        </ul>
+      </nav>
+      <div class="sidebar-bottom">
+        <button @click="logout" class="sidebar-logout">
+          <i class="bi bi-box-arrow-right"></i> Déconnexion
+        </button>
+      </div>
     </aside>
-    <main class="main-content">
+  <main class="main-content">
       <div v-if="currentView==='dashboard'">
         <h2>Tableau de bord Super Administrateur</h2>
         <div class="stats-grid">
@@ -70,7 +92,7 @@
               <option value="superadmin">SuperAdmin</option>
             </select>
           </div>
-          <table class="user-table">
+          <table class="users-table-modern">
             <thead>
               <tr>
                 <th>Email</th>
@@ -82,24 +104,38 @@
               </tr>
             </thead>
             <tbody>
-              <tr v-for="user in paginatedUsers" :key="user.id">
-                <td>{{ user.email }}</td>
-                <td><input v-model="user.first_name" /></td>
-                <td><input v-model="user.last_name" /></td>
-                <td>
-                  <select v-model="user.role">
+              <tr v-for="user in paginatedUsers" :key="user.id" :class="{ 'inactive': !user.active }">
+                <td class="email-cell">
+                  <div class="email-info">
+                    <strong>{{ user.email }}</strong>
+                  </div>
+                </td>
+                <td class="name-cell">
+                  <input v-model="user.first_name" placeholder="Prénom" class="inline-input" />
+                </td>
+                <td class="name-cell">
+                  <input v-model="user.last_name" placeholder="Nom" class="inline-input" />
+                </td>
+                <td class="role-cell">
+                  <select v-model="user.role" class="inline-input">
                     <option value="user">Utilisateur</option>
                     <option value="admin">Admin</option>
                     <option value="superadmin">SuperAdmin</option>
                   </select>
                 </td>
-                <td>
-                  <span v-if="user.active">Actif</span>
-                  <span v-else>Inactif</span>
+                <td class="status-cell">
+                  <span class="status-indicator" :class="user.active ? 'active' : 'inactive'">
+                    <span class="status-dot"></span>
+                    {{ user.active ? 'Actif' : 'Inactif' }}
+                  </span>
                 </td>
-                <td>
-                  <button @click="updateUser(user)">Enregistrer</button>
-                  <button @click="toggleActive(user)">{{ user.active ? 'Désactiver' : 'Activer' }}</button>
+                <td class="actions-cell">
+                  <div class="action-buttons">
+                    <button @click="updateUser(user)" class="btn-save-mini" title="Enregistrer">💾</button>
+                    <button @click="toggleActive(user)" class="btn-toggle-mini" :class="user.active ? 'deactivate' : 'activate'" :title="user.active ? 'Désactiver' : 'Activer'">
+                      {{ user.active ? '🔒' : '✅' }}
+                    </button>
+                  </div>
                 </td>
               </tr>
             </tbody>
@@ -111,6 +147,57 @@
           </div>
         </section>
       </div>
+      <div v-if="currentView==='flights'">
+        <section>
+          <h3>Consultation des vols</h3>
+          <div class="filters-row">
+            <input v-model="flightSearch" placeholder="Rechercher par code aéroport..." class="filter-input" />
+            <select v-model="tripTypeFilter" class="filter-input">
+              <option value="">Tous types</option>
+              <option value="oneWay">Aller simple</option>
+              <option value="roundTrip">Aller-retour</option>
+            </select>
+            <select v-model="travelClassFilter" class="filter-input">
+              <option value="">Toutes classes</option>
+              <option value="ECONOMY">Économique</option>
+              <option value="BUSINESS">Affaires</option>
+              <option value="FIRST">Première</option>
+            </select>
+          </div>
+          <table class="flights-table">
+            <thead>
+              <tr>
+                <th>Origine</th>
+                <th>Destination</th>
+                <th>Date départ</th>
+                <th>Date retour</th>
+                <th>Classe</th>
+                <th>Type</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="flight in paginatedFlights" :key="flight.id">
+                <td>{{ flight.origin_code }}</td>
+                <td>{{ flight.destination_code }}</td>
+                <td>{{ formatDateShort(flight.departure_date) }}</td>
+                <td>{{ formatDateShort(flight.return_date) }}</td>
+                <td>{{ formatTravelClass(flight.travel_class) }}</td>
+                <td>{{ formatTripType(flight.trip_type) }}</td>
+                <td>
+                  <button class="btn-small" @click="viewFlightDetails(flight)">Voir</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="pagination">
+            <button :disabled="flightPage === 1" @click="flightPage--">&lt;</button>
+            <span>Page {{ flightPage }} / {{ flightPageCount }}</span>
+            <button :disabled="flightPage === flightPageCount" @click="flightPage++">&gt;</button>
+          </div>
+        </section>
+      </div>
+
       <div v-if="currentView==='reservations'">
         <section>
           <h3>Gestion des réservations</h3>
@@ -131,6 +218,7 @@
                 <th>Montant</th>
                 <th>Statut</th>
                 <th>Date</th>
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -138,8 +226,14 @@
                 <td>{{ r.reservation_number }}</td>
                 <td>{{ r.user_email || r.user_id }}</td>
                 <td>{{ r.total_price }} {{ r.currency }}</td>
-                <td>{{ r.status }}</td>
+                <td>
+                  <span class="status-badge" :class="r.status">{{ r.status }}</span>
+                </td>
                 <td>{{ formatDate(r.created_at) }}</td>
+                <td>
+                  <button class="btn-small" @click="viewReservation(r)">Voir</button>
+                  <button class="btn-small btn-danger" @click="cancelReservation(r)" v-if="r.status !== 'cancelled'">Annuler</button>
+                </td>
               </tr>
             </tbody>
           </table>
@@ -149,8 +243,25 @@
             <button :disabled="reservationPage === reservationPageCount" @click="reservationPage++">&gt;</button>
           </div>
         </section>
+        <!-- Modal de détails réservation -->
+        <div v-if="showReservationModal" class="modal-overlay" @click.self="showReservationModal = false">
+          <div class="modal-content" id="recu-reservation">
+            <h3>Détail de la réservation</h3>
+            <div v-if="selectedReservation">
+              <p><strong>Numéro :</strong> {{ selectedReservation.reservation_number }}</p>
+              <p><strong>Utilisateur :</strong> {{ selectedReservation.user_email || selectedReservation.user_id }}</p>
+              <p><strong>Nom :</strong> {{ selectedReservation.user_first_name }} {{ selectedReservation.user_last_name }}</p>
+              <p><strong>Montant :</strong> {{ selectedReservation.total_price }} {{ selectedReservation.currency }}</p>
+              <p><strong>Statut :</strong> <span class="status-badge" :class="selectedReservation.status">{{ selectedReservation.status }}</span></p>
+              <p><strong>Date :</strong> {{ formatDate(selectedReservation.created_at) }}</p>
+              <hr />
+              <button class="btn-primary" @click="printTicket(selectedReservation)">Imprimer le reçu</button>
+              <button class="btn-secondary" @click="showReservationModal = false">Fermer</button>
+            </div>
+          </div>
+        </div>
       </div>
-      <div v-if="currentView==='supervision'">
+  <div v-if="currentView==='supervision'">
         <section>
           <h3>Supervision globale</h3>
           <ul>
@@ -162,8 +273,8 @@
           <p style="margin-top:16px;">(Graphiques et exports à venir)</p>
         </section>
       </div>
-    </main>
-  </div>
+</main>
+</div>
 </template>
 
 <script>
@@ -202,12 +313,92 @@ export default {
       userRoleFilter: '',
       reservationSearch: '',
       reservationStatusFilter: '',
-  userPage: 1,
-  userPageSize: 5,
-  reservationPage: 1,
-  reservationPageSize: 5
+      userPage: 1,
+      userPageSize: 5,
+      reservationPage: 1,
+      reservationPageSize: 5,
+      flights: [],
+      flightSearch: '',
+      tripTypeFilter: '',
+      travelClassFilter: '',
+      flightPage: 1,
+      flightPageSize: 10,
+      showFlightModal: false,
+      selectedFlight: null,
+      showReservationModal: false,
+      selectedReservation: null
     }
   },
+    paginatedFlights() {
+      const start = (this.flightPage - 1) * this.flightPageSize
+      const end = start + this.flightPageSize
+      return this.filteredFlights.slice(start, end)
+    },
+    filteredFlights() {
+      return this.flights.filter(flight => {
+        const search = this.flightSearch.toLowerCase()
+        const matchSearch =
+          flight.origin_code?.toLowerCase().includes(search) ||
+          flight.destination_code?.toLowerCase().includes(search)
+        const matchTripType = this.tripTypeFilter ? flight.trip_type === this.tripTypeFilter : true
+        const matchTravelClass = this.travelClassFilter ? flight.travel_class === this.travelClassFilter : true
+        return matchSearch && matchTripType && matchTravelClass
+      })
+    },
+    flightPageCount() {
+      return Math.ceil(this.filteredFlights.length / this.flightPageSize) || 1
+    },
+    formatDateShort(date) {
+      if (!date) return ''
+      return new Date(date).toLocaleDateString('fr-FR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: '2-digit'
+      })
+    },
+    formatTravelClass(travelClass) {
+      const classes = {
+        'ECONOMY': 'Économique',
+        'PREMIUM_ECONOMY': 'Économique Premium',
+        'BUSINESS': 'Affaires',
+        'FIRST': 'Première'
+      }
+      return classes[travelClass] || travelClass
+    },
+    formatTripType(tripType) {
+      const types = {
+        'oneWay': 'Aller simple',
+        'roundTrip': 'Aller-retour'
+      }
+      return types[tripType] || tripType
+    },
+    viewFlightDetails(flight) {
+      this.selectedFlight = flight
+      this.showFlightModal = true
+    },
+    viewReservation(res) {
+      this.selectedReservation = res
+      this.showReservationModal = true
+    },
+    printTicket(res) {
+      // Impression du reçu uniquement (modal)
+      const printContents = document.getElementById('recu-reservation').innerHTML;
+      const originalContents = document.body.innerHTML;
+      document.body.innerHTML = printContents;
+      window.print();
+      document.body.innerHTML = originalContents;
+      window.location.reload(); // Pour restaurer l'état Vue
+    },
+    async cancelReservation(res) {
+      if (!confirm('Confirmer l’annulation ? 30% de pénalité seront appliqués.')) return
+      const penalite = Math.round(res.total_price * 0.3 * 100) / 100
+      const nouveauMontant = Math.round((res.total_price - penalite) * 100) / 100
+      await supabase.from(TABLES.RESERVATIONS).update({
+        status: 'cancelled',
+        total_price: nouveauMontant
+      }).eq('id', res.id)
+      await this.fetchReservations()
+    },
   computed: {
     paginatedUsers() {
       const start = (this.userPage - 1) * this.userPageSize
@@ -297,9 +488,14 @@ export default {
       await this.fetchUsers()
     }
   },
-  mounted() {
+  async mounted() {
     this.fetchUsers()
     this.fetchReservations()
+    // Récupération des vols
+    const { data, error } = await supabase.from(TABLES.FLIGHTS).select('*').order('created_at', { ascending: false })
+    if (!error) {
+      this.flights = data || []
+    }
   }
 }
 </script>
@@ -374,70 +570,263 @@ export default {
 }
 .superadmin-layout {
   display: flex;
-  min-height: 80vh;
-}
-.sidebar {
-  width: 220px;
-  background: #1a237e;
-  color: #fff;
-  padding: 32px 0 0 0;
   min-height: 100vh;
+  height: 100vh;
+}
+/* Nouveau sidebar moderne */
+.sidebar-modern {
+  width: 260px;
+  background: #2453c7;
+  color: #fff;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
   box-shadow: 2px 0 8px rgba(0,0,0,0.06);
 }
-.sidebar h2 {
-  text-align: center;
-  margin-bottom: 16px;
-  font-size: 1.3rem;
-  letter-spacing: 1px;
+.sidebar-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 32px 24px 16px 24px;
 }
-.user-info {
-  padding: 16px 32px;
-  border-bottom: 1px solid #3949ab;
-  margin-bottom: 16px;
-}
-.user-info p {
-  margin: 4px 0;
-  font-size: 0.9rem;
-}
-.user-info strong {
+.sidebar-logo {
+  font-size: 2rem;
   color: #fff;
 }
-.logout-btn {
-  background: #f44336;
-  color: white;
-  border: none;
-  padding: 8px 16px;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 0.8rem;
-  margin-top: 8px;
-  width: 100%;
+.sidebar-title {
+  font-size: 1.3rem;
+  font-weight: bold;
+  letter-spacing: 1px;
 }
-.logout-btn:hover {
-  background: #d32f2f;
+.sidebar-user {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 24px 24px 24px;
+  border-bottom: 1px solid #2e5fd0;
 }
-.sidebar ul {
+.sidebar-user-info {
+  display: flex;
+  flex-direction: column;
+}
+.sidebar-user-email {
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+.sidebar-user-role {
+  font-size: 0.85rem;
+  color: #cfd8ff;
+}
+.sidebar-nav {
+  flex: 1;
+  margin-top: 18px;
+}
+.sidebar-nav ul {
   list-style: none;
   padding: 0;
+  margin: 0;
 }
-.sidebar li {
-  padding: 16px 32px;
+.sidebar-nav li {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 32px;
   cursor: pointer;
-  transition: background 0.2s;
+  font-size: 1.08rem;
+  border-radius: 8px;
+  margin-bottom: 4px;
+  transition: background 0.2s, color 0.2s;
 }
-.sidebar li.active, .sidebar li:hover {
-  background: #3949ab;
+.sidebar-nav li.active, .sidebar-nav li:hover {
+  background: #1a3e8a;
+  color: #fff;
+}
+.sidebar-nav i {
+  font-size: 1.2rem;
+}
+.sidebar-bottom {
+  padding: 24px;
+  border-top: 1px solid #2e5fd0;
+}
+.sidebar-logout {
+  width: 100%;
+  background: #fff;
+  color: #2453c7;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 0;
+  font-size: 1rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+.sidebar-logout:hover {
+  background: #2453c7;
+  color: #fff;
+  border: 1px solid #fff;
 }
 .main-content {
   flex: 1;
-  padding: 40px 32px;
+  padding: 0;
   background: #f7f7f7;
   min-height: 100vh;
+  height: 100vh;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.main-content > div[v-if="currentView='search'"] {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100vh;
+  margin: 0;
+  padding: 0 16px;
+  box-sizing: border-box;
+}
+.main-content .search-banner, .main-content .flight-search-form {
+  max-width: 900px;
+  width: 100%;
+  margin: 0 auto;
+  box-sizing: border-box;
+}
+@media (max-width: 1000px) {
+  .main-content .search-banner, .main-content .flight-search-form {
+    max-width: 100%;
+    padding: 0 8px;
+  }
+}
+
+/* Réduction des marges/paddings du formulaire de recherche */
+.main-content .search-banner, .main-content .flight-search-form {
+  margin: 0 !important;
+  padding: 0 !important;
+  max-width: 900px;
+  width: 100%;
 }
 .add-user-btn {
   margin-bottom: 16px;
+  background: #2453c7;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 16px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+  transition: transform 0.06s ease, background 0.2s ease;
 }
+.add-user-btn:hover { background: #1a3e8a; }
+.add-user-btn:active { transform: translateY(1px); }
 section {
   margin-bottom: 32px;
 }
+
+/* Modern table + controls (aligné au style admin) */
+.users-table-modern {
+  width: 100%;
+  border-collapse: collapse;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+  overflow: hidden;
+  margin-top: 16px;
+}
+.users-table-modern thead {
+  background: linear-gradient(135deg, #2453c7 0%, #1a3e8a 100%);
+  color: white;
+}
+.users-table-modern th {
+  padding: 1rem 0.75rem;
+  text-align: left;
+  font-weight: 600;
+  font-size: 0.9rem;
+  letter-spacing: 0.5px;
+}
+.users-table-modern tbody tr {
+  border-bottom: 1px solid #e9ecef;
+  transition: background-color 0.2s ease;
+}
+.users-table-modern tbody tr:hover {
+  background-color: #f8f9fa;
+}
+.users-table-modern tbody tr.inactive {
+  opacity: 0.8;
+}
+.users-table-modern td {
+  padding: 0.75rem;
+  vertical-align: middle;
+}
+.email-cell { min-width: 200px; }
+.name-cell { width: 160px; }
+.role-cell { width: 140px; }
+.status-cell { width: 140px; }
+.actions-cell { width: 120px; }
+
+.email-info strong { color: #2c3e50; font-size: 0.9rem; }
+
+.inline-input {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid #e9ecef;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+  background: #f8f9fa;
+}
+.inline-input:focus {
+  outline: none;
+  border-color: #2453c7;
+  background: white;
+  box-shadow: 0 0 0 2px rgba(36,83,199,0.12);
+}
+
+.status-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+.status-dot { width: 10px; height: 10px; border-radius: 50%; }
+.status-indicator.active { color: #28a745; }
+.status-indicator.inactive { color: #dc3545; }
+.status-indicator.active .status-dot { background: #28a745; }
+.status-indicator.inactive .status-dot { background: #dc3545; }
+
+.action-buttons { display: flex; gap: 0.35rem; }
+.btn-save-mini, .btn-toggle-mini {
+  width: 34px; height: 34px; border: none; border-radius: 6px;
+  cursor: pointer; font-size: 0.95rem; display: inline-flex; align-items: center; justify-content: center;
+  transition: all 0.2s ease;
+}
+.btn-save-mini { background: #e9ecef; color: #495057; }
+.btn-save-mini:hover { background: #dbe0e5; }
+.btn-toggle-mini { background: #e9ecef; }
+.btn-toggle-mini.activate { background: #d4edda; color: #155724; }
+.btn-toggle-mini.activate:hover { background: #c3e6cb; }
+.btn-toggle-mini.deactivate { background: #f8d7da; color: #721c24; }
+.btn-toggle-mini.deactivate:hover { background: #f1b0b7; }
+
+/* Statut badges pour réservations */
+.status-badge {
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+.status-badge.confirmed { background: #d4edda; color: #155724; }
+.status-badge.pending { background: #fff3cd; color: #856404; }
+.status-badge.cancelled { background: #f8d7da; color: #721c24; }
 </style>
