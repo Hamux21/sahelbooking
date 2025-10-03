@@ -1,23 +1,5 @@
 <template>
   <div class="flight-search">
-  <div class="header">
-      <div class="logo-container">
-        <div class="logo-text">
-          <h1 class="brand-name">SahelBooking</h1>
-          <p class="tagline">Trouvez votre vol parfait</p>
-        </div>
-      </div>
-      <div class="auth-section">
-        <div v-if="currentUser" class="user-info">
-          <span class="welcome-text">Bonjour, {{ currentUser.user_metadata?.first_name || currentUser.email }}</span>
-          <button @click="signOut" class="auth-button logout">Déconnexion</button>
-        </div>
-        <div v-else class="auth-buttons">
-          <button @click="showAuthModal = true" class="auth-button login">Connexion</button>
-        </div>
-      </div>
-    </div>
-
     <form @submit.prevent="searchFlights" class="search-form">
       <div class="input-group origin-destination">
         <div class="input-wrapper">

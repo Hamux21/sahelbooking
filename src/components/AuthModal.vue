@@ -1,4 +1,4 @@
-<template>
+<template >
   <div v-if="show" class="modal-overlay" @click.self="$emit('close')">
     <div class="modal-backdrop"></div>
     <div class="modal-content auth-modal">
@@ -8,13 +8,13 @@
       </div>
 
       <form @submit.prevent="handleSubmit" class="auth-form">
-        <div v-if="!isLogin" class="form-row">
-          <div class="form-group">
-            <label>Prénom *</label>
+        <div v-if="!isLogin" class="form-row" style="display: flex; gap: 16px;">
+          <div class="form-group" style="flex:1;">
+            <label style="display:block; text-align:left;">Prénom *</label>
             <input v-model="formData.firstName" type="text" required />
           </div>
-          <div class="form-group">
-            <label>Nom *</label>
+          <div class="form-group" style="flex:1;">
+            <label style="display:block; text-align:left;">Nom *</label>
             <input v-model="formData.lastName" type="text" required />
           </div>
         </div>
@@ -52,9 +52,13 @@
           <p>
             {{ isLogin ? 'Pas encore de compte ?' : 'Déjà un compte ?' }}
             <button type="button" @click="toggleMode" class="link-button">
-              {{ isLogin ? 'S\'inscrire' : 'Se connecter' }}
+              {{ isLogin ? "S'inscrire" : "Se connecter" }}
             </button>
           </p>
+          <div v-if="!isLogin" style="text-align:center; margin-top:10px;">
+            <span>Déjà un compte ? </span>
+            <button type="button" @click="toggleMode" class="link-button">Se connecter</button>
+          </div>
         </div>
       </form>
     </div>
